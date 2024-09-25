@@ -48,14 +48,14 @@ app.get("/bbox", (req: Request, res: Response) => {
   const formattedDate = new Date(timestamp);
   const formattedTimestamp = formattedDate.toISOString();
 
-  const deviceDetection = inMemDeviceMap.get(deviceId);
-  if (!deviceDetection) {
+  const segmentList = inMemDeviceMap.get(deviceId);
+  if (!segmentList) {
     return res.status(400).json({
       message: "deviceId does not exist.",
     });
   }
 
-  const detectionFrameList = deviceDetection.get(formattedTimestamp) || [];
+  const detectionFrameList = segmentList.get(formattedTimestamp) || [];
   if (detectionFrameList.length < fps * duration) {
     return res.status(404).json({
       message: "Frame Buffer less than fps",
@@ -110,14 +110,14 @@ app.get("/detection", (req: Request, res: Response) => {
   const formattedDate = new Date(timestamp);
   const formattedTimestamp = formattedDate.toISOString();
 
-  const deviceDetection = inMemDeviceMap.get(deviceId);
-  if (!deviceDetection) {
+  const segmentList = inMemDeviceMap.get(deviceId);
+  if (!segmentList) {
     return res.status(400).json({
       message: "deviceId does not exist.",
     });
   }
 
-  const detectionFrameList = deviceDetection.get(formattedTimestamp) || [];
+  const detectionFrameList = segmentList.get(formattedTimestamp) || [];
 
   const payload = {
     length: detectionFrameList.length,
@@ -140,18 +140,18 @@ app.post("/detection-receiver-manual", (req: Request, res: Response) => {
     const deviceId = d.image.cam_id;
     const formattedDate = new Date(d.image.timestamp);
     const formattedTimestamp = formattedDate.toISOString();
-    const device = inMemDeviceMap.get(deviceId);
-    if (device) {
-      const detectionList = device.get(formattedTimestamp);
+    const segmentList = inMemDeviceMap.get(deviceId);
+    if (segmentList) {
+      const detectionList = segmentList.get(formattedTimestamp);
       if (detectionList) {
         detectionList.push(d);
       } else {
-        device.set(formattedTimestamp, [d]);
+        segmentList.set(formattedTimestamp, [d]);
       }
     } else {
-      const detectionMap = new Map();
-      detectionMap.set(formattedTimestamp, [d]);
-      inMemDeviceMap.set(deviceId, detectionMap);
+      const newSegmentListMap = new Map();
+      newSegmentListMap.set(formattedTimestamp, [d]);
+      inMemDeviceMap.set(deviceId, newSegmentListMap);
     }
     updatedDetectionDeviceTimestamp.add(`${deviceId}||${formattedTimestamp}`);
   });
@@ -166,13 +166,13 @@ app.post("/detection-receiver-manual", (req: Request, res: Response) => {
     console.log(eList);
     const deviceId = eList[0];
     const formattedTimestamp = eList[1];
-    const device = inMemDeviceMap.get(deviceId);
-    if (device) {
-      const detectionList = device.get(formattedTimestamp);
-      if (detectionList) {
+    const segmentList = inMemDeviceMap.get(deviceId);
+    if (segmentList) {
+      const frameList = segmentList.get(formattedTimestamp);
+      if (frameList) {
         updatedDetections.push({
           deviceId: deviceId,
-          frameCount: detectionList.length,
+          frameCount: frameList.length,
           timestamp: formattedTimestamp,
         });
       }
@@ -195,18 +195,18 @@ app.post("/detection-receiver", (req: Request, res: Response) => {
     const deviceId = d.image.cam_id;
     const formattedDate = new Date(d.image.timestamp);
     const formattedTimestamp = formattedDate.toISOString();
-    const device = inMemDeviceMap.get(deviceId);
-    if (device) {
-      const detectionList = device.get(formattedTimestamp);
+    const segmentList = inMemDeviceMap.get(deviceId);
+    if (segmentList) {
+      const detectionList = segmentList.get(formattedTimestamp);
       if (detectionList) {
         detectionList.push(d);
       } else {
-        device.set(formattedTimestamp, [d]);
+        segmentList.set(formattedTimestamp, [d]);
       }
     } else {
-      const detectionMap = new Map();
-      detectionMap.set(formattedTimestamp, [d]);
-      inMemDeviceMap.set(deviceId, detectionMap);
+      const newSegmentListMap = new Map();
+      newSegmentListMap.set(formattedTimestamp, [d]);
+      inMemDeviceMap.set(deviceId, newSegmentListMap);
     }
     updatedDetectionDeviceTimestamp.add(`${deviceId}||${formattedTimestamp}`);
   });
@@ -218,15 +218,16 @@ app.post("/detection-receiver", (req: Request, res: Response) => {
   }[] = [];
   updatedDetectionDeviceTimestamp.forEach((e) => {
     const eList = e.split("||");
+    console.log(eList);
     const deviceId = eList[0];
     const formattedTimestamp = eList[1];
-    const device = inMemDeviceMap.get(deviceId);
-    if (device) {
-      const detectionList = device.get(formattedTimestamp);
-      if (detectionList) {
+    const segmentList = inMemDeviceMap.get(deviceId);
+    if (segmentList) {
+      const frameList = segmentList.get(formattedTimestamp);
+      if (frameList) {
         updatedDetections.push({
           deviceId: deviceId,
-          frameCount: detectionList.length,
+          frameCount: frameList.length,
           timestamp: formattedTimestamp,
         });
       }
