@@ -164,7 +164,6 @@ app.post("/detection-receiver-manual", (req: Request, res: Response) => {
   }[] = [];
   updatedDetectionDeviceTimestamp.forEach((e) => {
     const eList = e.split("||");
-    console.log(eList);
     const deviceId = eList[0];
     const formattedTimestamp = eList[1];
     const segmentList = inMemDeviceMap.get(deviceId);
