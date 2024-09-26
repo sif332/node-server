@@ -12,6 +12,7 @@ import cors from "cors";
 const app = express();
 const PORT = 8090;
 
+//Map<deviceId, Map<formattedDate, Frame[]>
 const inMemDeviceMap: Map<string, Map<string, Detection[]>> = new Map();
 
 app.use(cors());
